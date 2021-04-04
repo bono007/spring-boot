@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2019 the original author or authors.
+ * Copyright 2012-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,15 +20,19 @@ package org.springframework.boot.web.server;
  * Simple server-independent abstraction for HTTP/2 configuration.
  *
  * @author Brian Clozel
+ * @author Chris Bono
  * @since 2.0.0
  */
 public class Http2 {
 
 	private boolean enabled = false;
 
+	private boolean h2cEnabled = false;
+
 	/**
-	 * Return whether to enable HTTP/2 support, if the current environment supports it.
-	 * @return {@code true} to enable HTTP/2 support
+	 * Return whether to enable HTTP/2 support over TLS (h2), if the current environment
+	 * supports it.
+	 * @return {@code true} to enable HTTP/2 support over TLS (h2)
 	 */
 	public boolean isEnabled() {
 		return this.enabled;
@@ -36,6 +40,19 @@ public class Http2 {
 
 	public void setEnabled(boolean enabled) {
 		this.enabled = enabled;
+	}
+
+	/**
+	 * Return whether to enable HTTP/2 support over TCP (h2c), if the current environment
+	 * supports it.
+	 * @return {@code true} to enable HTTP/2 support over TCP (h2c)
+	 */
+	public boolean isH2cEnabled() {
+		return this.h2cEnabled;
+	}
+
+	public void setH2cEnabled(boolean h2cEnabled) {
+		this.enabled = h2cEnabled;
 	}
 
 }

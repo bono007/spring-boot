@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors.
+ * Copyright 2012-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import io.undertow.Handlers;
 import io.undertow.Undertow;
 import io.undertow.Undertow.Builder;
 import io.undertow.UndertowOptions;
+import org.apache.coyote.http2.Http2Protocol;
 
 import org.springframework.boot.web.server.AbstractConfigurableWebServerFactory;
 import org.springframework.boot.web.server.Compression;
@@ -44,6 +45,7 @@ import org.springframework.util.StringUtils;
  *
  * @author Phillip Webb
  * @author Andy Wilkinson
+ * @author Chris Bono
  */
 class UndertowWebServerFactoryDelegate {
 
@@ -160,19 +162,24 @@ class UndertowWebServerFactoryDelegate {
 		}
 		if (ssl != null && ssl.isEnabled()) {
 			new SslBuilderCustomizer(factory.getPort(), address, ssl, factory.getSslStoreProvider()).customize(builder);
-			Http2 http2 = factory.getHttp2();
-			if (http2 != null) {
-				builder.setServerOption(UndertowOptions.ENABLE_HTTP2, http2.isEnabled());
-			}
 		}
 		else {
 			builder.addHttpListener(port, (address != null) ? address.getHostAddress() : "0.0.0.0");
 		}
+		configureHttp2(builder, ssl, factory.getHttp2());
 		builder.setServerOption(UndertowOptions.SHUTDOWN_TIMEOUT, 0);
 		for (UndertowBuilderCustomizer customizer : this.builderCustomizers) {
 			customizer.customize(builder);
 		}
 		return builder;
+	}
+
+	private void configureHttp2(Builder builder, Ssl ssl, Http2 http2) {
+		boolean sslEnabled = ssl != null && ssl.isEnabled();
+		boolean h2Enabled = http2 != null && http2.isEnabled();
+		boolean h2cEnabled = http2 != null && http2.isH2cEnabled();
+		boolean shouldEnable = h2cEnabled || (h2Enabled && sslEnabled);
+		builder.setServerOption(UndertowOptions.ENABLE_HTTP2, shouldEnable);
 	}
 
 	List<HttpHandlerFactory> createHttpHandlerFactories(AbstractConfigurableWebServerFactory webServerFactory,

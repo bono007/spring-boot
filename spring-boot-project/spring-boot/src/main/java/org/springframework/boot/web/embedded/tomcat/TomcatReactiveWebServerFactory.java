@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors.
+ * Copyright 2012-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,6 +56,7 @@ import org.springframework.util.StringUtils;
  *
  * @author Brian Clozel
  * @author HaiTao Zhang
+ * @author Chris Bono
  * @since 2.0.0
  */
 public class TomcatReactiveWebServerFactory extends AbstractReactiveWebServerFactory
@@ -193,6 +194,8 @@ public class TomcatReactiveWebServerFactory extends AbstractReactiveWebServerFac
 		if (getSsl() != null && getSsl().isEnabled()) {
 			customizeSsl(connector);
 		}
+		maybeCustomizeHttp2(connector);
+
 		TomcatConnectorCustomizer compression = new CompressionConnectorCustomizer(getCompression());
 		compression.customize(connector);
 		for (TomcatConnectorCustomizer customizer : this.tomcatConnectorCustomizers) {
@@ -214,7 +217,13 @@ public class TomcatReactiveWebServerFactory extends AbstractReactiveWebServerFac
 
 	private void customizeSsl(Connector connector) {
 		new SslConnectorCustomizer(getSsl(), getSslStoreProvider()).customize(connector);
-		if (getHttp2() != null && getHttp2().isEnabled()) {
+	}
+
+	private void maybeCustomizeHttp2(Connector connector) {
+		boolean sslEnabled = getSsl() != null && getSsl().isEnabled();
+		boolean h2Enabled = getHttp2() != null && getHttp2().isEnabled();
+		boolean h2cEnabled = getHttp2() != null && getHttp2().isH2cEnabled();
+		if (h2cEnabled || (h2Enabled && sslEnabled)) {
 			connector.addUpgradeProtocol(new Http2Protocol());
 		}
 	}
