@@ -94,6 +94,7 @@ import org.springframework.util.StringUtils;
  * @author Eddú Meléndez
  * @author Christoffer Sawicki
  * @author Dawid Antecki
+ * @author Chris Bono
  * @since 2.0.0
  * @see #setPort(int)
  * @see #setContextLifecycleListeners(Collection)
@@ -325,6 +326,8 @@ public class TomcatServletWebServerFactory extends AbstractServletWebServerFacto
 		if (getSsl() != null && getSsl().isEnabled()) {
 			customizeSsl(connector);
 		}
+		maybeCustomizeHttp2(connector);
+
 		TomcatConnectorCustomizer compression = new CompressionConnectorCustomizer(getCompression());
 		compression.customize(connector);
 		for (TomcatConnectorCustomizer customizer : this.tomcatConnectorCustomizers) {
@@ -346,7 +349,13 @@ public class TomcatServletWebServerFactory extends AbstractServletWebServerFacto
 
 	private void customizeSsl(Connector connector) {
 		new SslConnectorCustomizer(getSsl(), getSslStoreProvider()).customize(connector);
-		if (getHttp2() != null && getHttp2().isEnabled()) {
+	}
+
+	private void maybeCustomizeHttp2(Connector connector) {
+		boolean sslEnabled = getSsl() != null && getSsl().isEnabled();
+		boolean h2Enabled = getHttp2() != null && getHttp2().isEnabled();
+		boolean h2cEnabled = getHttp2() != null && getHttp2().isH2cEnabled();
+		if (h2cEnabled || (h2Enabled && sslEnabled)) {
 			connector.addUpgradeProtocol(new Http2Protocol());
 		}
 	}
